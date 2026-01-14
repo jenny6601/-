@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自建民宿協作管理儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .tab-active { border-bottom: 3px solid #0f172a; color: #0f172a; font-weight: 700; }
+        .status-done { background-color: #dcfce7; color: #166534; }
+        .status-pending { background-color: #fef9c3; color: #854d0e; }
+        .status-todo { background-color: #f1f5f9; color: #475569; }
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-10">
+
+    <!-- Header -->
+    <header class="bg-[#1e293b] text-white py-8 px-6 shadow-lg">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-2xl md:text-3xl font-bold">自建民宿：建築師與設計師協作管理系統</h1>
+            <p class="text-slate-400 mt-2 text-sm md:text-base">全時程 24 個月進度與三方決策追蹤</p>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 overflow-x-auto">
+        <div class="max-w-6xl mx-auto flex whitespace-nowrap px-4">
+            <button onclick="switchTab('table')" id="tab-table" class="px-6 py-4 text-slate-500 hover:text-slate-800 transition-all tab-active">
+                Excel 管理表格
+            </button>
+            <button onclick="switchTab('timeline')" id="tab-timeline" class="px-6 py-4 text-slate-500 hover:text-slate-800 transition-all">
+                24個月全時程
+            </button>
+            <button onclick="switchTab('checklist')" id="tab-checklist" class="px-6 py-4 text-slate-500 hover:text-slate-800 transition-all">
+                業主必備 CheckList
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-6">
+        
+        <!-- Table Section -->
+        <section id="content-table" class="block">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-4 font-bold text-slate-700 text-sm">階段</th>
+                                <th class="px-4 py-4 font-bold text-slate-700 text-sm">項目名稱</th>
+                                <th class="px-4 py-4 font-bold text-slate-700 text-sm">主要負責</th>
+                                <th class="px-4 py-4 font-bold text-slate-700 text-sm">決策重點</th>
+                                <th class="px-4 py-4 font-bold text-slate-700 text-sm">協作關鍵點</th>
+                                <th class="px-4 py-4 font-bold text-slate-700 text-sm">狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- JS injected rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <p class="mt-4 text-slate-400 text-xs text-center">提示：點擊狀態圓圈可變更進度</p>
+        </section>
+
+        <!-- Timeline Section -->
+        <section id="content-timeline" class="hidden">
+            <div class="space-y-12 max-w-3xl mx-auto py-4">
+                <!-- Timeline items will be injected here -->
+            </div>
+        </section>
+
+        <!-- Checklist Section -->
+        <section id="content-checklist" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                        <span class="w-2 h-6 bg-blue-500 rounded mr-3"></span>水電管線地雷區
+                    </h3>
+                    <ul class="space-y-3" id="check-list-1"></ul>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                        <span class="w-2 h-6 bg-amber-500 rounded mr-3"></span>民宿特有法規
+                    </h3>
+                    <ul class="space-y-3" id="check-list-2"></ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const tableData = [
+            { phase: "1. 規劃", task: "建築配置與動線", who: "建築師", decision: "方位、房型、坪數", note: "設計師需參與確認採光隔間", status: "done" },
+            { phase: "2. 執照", task: "建照申請掛件", who: "建築師", decision: "外觀顏色、開窗位置", note: "影響室內家具擺放", status: "pending" },
+            { phase: "3. 室內", task: "弱電與插座規劃", who: "設計師", decision: "3C使用習慣、燈控", note: "需確認結構牆位置", status: "todo" },
+            { phase: "4. 設備", task: "全熱交換/冷氣系統", who: "設計師", decision: "品牌偏好、預算", note: "確認樑下高度，避免壓迫", status: "todo" },
+            { phase: "5. 建築", task: "廚房與衛浴管線", who: "建築師", decision: "廚具形式 (中島/一字)", note: "灌漿前需完成洩水坡度定位", status: "todo" },
+            { phase: "6. 外觀", task: "景觀與外牆材質", who: "建築師", decision: "石材、塗料、招牌", note: "協調外牆亮化效果", status: "todo" },
+            { phase: "7. 執照", task: "使用執照申請", who: "建築師", decision: "民宿合法化查驗", note: "不影響消防與使照核可內容", status: "todo" },
+            { phase: "8. 軟裝", task: "家具與藝術品進場", who: "設計師", decision: "預算與風格定調", note: "確保工地清潔，避免汙染", status: "todo" }
+        ];
+
+        const timelineData = [
+            { 
+                title: "第一階段：設計與執照", 
+                months: "第 1 - 6 個月", 
+                items: ["建築師草圖與環境評估", "設計師介入平面配置協商", "建築師申請建照"],
+                color: "blue" 
+            },
+            { 
+                title: "第二階段：營造發包與施工", 
+                months: "第 7 - 16 個月", 
+                items: ["營造發包、整地", "結構體灌漿 (確認管路預留)", "外牆工程與申請使照"],
+                color: "indigo" 
+            },
+            { 
+                title: "第三階段：室內裝修與景觀", 
+                months: "第 17 - 22 個月", 
+                items: ["木作、油漆、系統櫃安裝", "景觀與標誌安裝", "專用設備 (備品、POS) 進場"],
+                color: "emerald" 
+            },
+            { 
+                title: "第四階段：合法化與試營運", 
+                months: "第 23 - 24 個月", 
+                items: ["消防檢查、申請民宿登記證", "網站上線、專業攝影", "試營運 (Soft Opening)"],
+                color: "amber" 
+            }
+        ];
+
+        const checklists = {
+            c1: ["冷氣室外機平台預留位置", "全棟軟水/過濾系統管路", "熱泵或太陽能熱水系統配線", "戶外景觀燈具與插座防水"],
+            c2: ["2026 無障礙空間新標準", "消防排煙窗與天花板高度限制", "緊急照明與疏散路線指示燈", "客房內逃生避難圖佈置"]
+        };
+
+        function switchTab(tab) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+        }
+
+        function renderTable() {
+            const body = document.getElementById('table-body');
+            body.innerHTML = tableData.map((row, idx) => `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="px-4 py-4 text-slate-500 font-medium">${row.phase}</td>
+                    <td class="px-4 py-4 font-bold text-slate-800">${row.task}</td>
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 rounded-md text-xs font-bold ${row.who === '建築師' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'}">${row.who}</span>
+                    </td>
+                    <td class="px-4 py-4 text-slate-600">${row.decision}</td>
+                    <td class="px-4 py-4 text-slate-400 text-xs italic leading-relaxed">${row.note}</td>
+                    <td class="px-4 py-4">
+                        <button onclick="toggleStatus(${idx})" class="px-3 py-1.5 rounded-full text-xs font-bold ${getStatusClass(row.status)}">
+                            ${getStatusLabel(row.status)}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusClass(s) {
+            if (s === 'done') return 'status-done';
+            if (s === 'pending') return 'status-pending';
+            return 'status-todo';
+        }
+
+        function getStatusLabel(s) {
+            if (s === 'done') return '● 已完成';
+            if (s === 'pending') return '◐ 進行中';
+            return '○ 待辦';
+        }
+
+        function toggleStatus(idx) {
+            const states = ['todo', 'pending', 'done'];
+            let currentIdx = states.indexOf(tableData[idx].status);
+            tableData[idx].status = states[(currentIdx + 1) % 3];
+            renderTable();
+        }
+
+        function renderTimeline() {
+            const container = document.querySelector('#content-timeline .space-y-12');
+            container.innerHTML = timelineData.map(t => `
+                <div class="relative pl-12 timeline-line">
+                    <div class="absolute left-0 top-0 w-10 h-10 rounded-full bg-${t.color}-100 flex items-center justify-center z-10 border-4 border-white shadow-sm">
+                        <div class="w-3 h-3 rounded-full bg-${t.color}-500"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-slate-800">${t.title}</h3>
+                            <span class="text-sm font-bold text-${t.color}-600 bg-${t.color}-50 px-3 py-1 rounded-full">${t.months}</span>
+                        </div>
+                        <ul class="space-y-3">
+                            ${t.items.map(item => `
+                                <li class="flex items-center text-slate-600 text-sm">
+                                    <svg class="w-4 h-4 mr-2 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+                                    ${item}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderChecklist() {
+            const c1 = document.getElementById('check-list-1');
+            const c2 = document.getElementById('check-list-2');
+            
+            c1.innerHTML = checklists.c1.map(item => `
+                <li class="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
+                    <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <span class="text-slate-600 text-sm">${item}</span>
+                </li>
+            `).join('');
+
+            c2.innerHTML = checklists.c2.map(item => `
+                <li class="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
+                    <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                    <span class="text-slate-600 text-sm">${item}</span>
+                </li>
+            `).join('');
+        }
+
+        // Initialize
+        renderTable();
+        renderTimeline();
+        renderChecklist();
+    </script>
+</body>
+</html>
